@@ -1,1 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tricky Word Champion</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:linear-gradient(135deg,#e0e7ff 0%,#f0fdf4 50%,#fef9c3 100%);min-height:100vh;color:#1a1a2e}
+.screen{display:none;flex-direction:column;align-items:center;min-height:100vh;padding:20px}
+.screen.active{display:flex}
+h1{font-size:2.2rem;font-weight:800;text-align:center;margin-bottom:8px;color:#1a1a2e}
+h2{font-size:1.5rem;font-weight:700;text-align:center;margin-bottom:16px;color:#1a1a2e}
+.subtitle{color:#555;text-align:center;margin-bottom:24px;font-size:.95rem}
+.btn{padding:14px 32px;border:none;border-radius:14px;font-size:1rem;font-weight:700;cursor:pointer;transition:transform .1s,box-shadow .1s;margin:6px;box-shadow:0 2px 8px rgba(0,0,0,.13)}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:#4f46e5;color:#fff}.btn-primary:hover{background:#3730a3}
+.btn-outline{background:#fff;color:#1a1a2e;border:2px solid #c7d2fe}.btn-outline:hover{background:#eef2ff}
+.btn-success{background:#16a34a;color:#fff}.btn-success:hover{background:#15803d}
+.btn-danger{background:#dc2626;color:#fff}.btn-danger:hover{background:#b91c1c}
+.name-input{padding:14px 20px;border-radius:14px;border:2px solid #c7d2fe;background:#fff;color:#1a1a2e;font-size:1.1rem;width:280px;text-align:center;outline:none;margin-bottom:16px;box-shadow:0 2px 6px rgba(0,0,0,.07)}
+.name-input:focus{border-color:#6366f1}
+.map-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;width:100%;max-width:420px;margin-top:8px}
+.challenge-card{border-radius:16px;padding:16px;text-align:center;cursor:pointer;transition:transform .15s,box-shadow .15s;border:3px solid transparent;position:relative;box-shadow:0 3px 12px rgba(0,0,0,.13)}
+.challenge-card:hover:not(.locked){transform:scale(1.04);box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.challenge-card.locked{opacity:.45;cursor:default}
+.card-level{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.8)}
+.card-name{font-size:1.25rem;font-weight:800;margin:4px 0;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.4)}
+.card-count{font-size:.8rem;color:rgba(255,255,255,.75)}
+.card-badge{position:absolute;top:-8px;right:-8px;background:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:.9rem;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.mode-screen-inner{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:480px}
+.mode-badge{display:inline-block;padding:6px 20px;border-radius:99px;font-size:.95rem;font-weight:700;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.mode-card{border-radius:22px;padding:22px 20px;width:100%;cursor:pointer;border:3px solid transparent;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 16px rgba(0,0,0,.10);margin-bottom:10px;text-align:center}
+.mode-card:hover{transform:scale(1.02);box-shadow:0 8px 28px rgba(0,0,0,.15)}
+.mode-card:active{transform:scale(.98)}
+.mode-icon{font-size:2.2rem;margin-bottom:6px}
+.mode-title{font-size:1.2rem;font-weight:800;margin-bottom:4px}
+.mode-desc{font-size:.88rem;line-height:1.5;opacity:.85}
+.prac-inner{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:420px}
+.word-display{font-size:4rem;font-weight:800;text-align:center;min-height:130px;display:flex;align-items:center;justify-content:center;border-radius:24px;width:100%;padding:30px;margin:20px 0;letter-spacing:.04em;box-shadow:0 6px 24px rgba(0,0,0,.15)}
+.progress-bar-wrap{width:100%;height:10px;background:#e0e7ff;border-radius:99px;overflow:hidden;margin-bottom:6px}
+.progress-bar{height:100%;border-radius:99px;transition:width .3s}
+.progress-text{color:#555;font-size:.9rem;margin-bottom:16px;text-align:center}
+.btn-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.ch-inner{flex:1;display:flex;flex-direction:column;align-items:center;width:100%;max-width:520px}
+.ch-header{background:#fff;border-radius:20px;padding:18px 24px;width:100%;text-align:center;box-shadow:0 3px 12px rgba(0,0,0,.09);margin-bottom:16px;border:1.5px solid #e0e7ff}
+.timer-bar-wrap{width:100%;height:14px;background:#e0e7ff;border-radius:99px;overflow:hidden;margin:8px 0 4px}
+.timer-bar{height:100%;border-radius:99px;transition:width .5s linear,background .3s}
+.timer-display{font-size:2.8rem;font-weight:800;color:#1a1a2e}
+.word-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;width:100%;margin:0 0 16px}
+.word-chip{padding:12px 20px;border-radius:14px;font-size:1.2rem;font-weight:700;cursor:pointer;border:2px solid transparent;transition:background .15s,border-color .15s,transform .1s;user-select:none}
+.word-chip:active{transform:scale(.93)}
+.word-chip.ticked{background:rgba(22,163,74,.18);border-color:#16a34a;color:#14532d}
+.word-chip.unticked{background:rgba(220,38,38,.15);border-color:#dc2626;color:#7f1d1d}
+/* Rapid fire */
+.rf-word{font-size:5rem;font-weight:800;text-align:center;border-radius:28px;padding:40px;width:100%;max-width:400px;box-shadow:0 6px 24px rgba(0,0,0,.15);transition:opacity .2s}
+.rf-bar-wrap{width:100%;max-width:400px;height:12px;background:#e0e7ff;border-radius:99px;overflow:hidden;margin:12px 0}
+.rf-bar{height:100%;border-radius:99px;transition:width .1s linear}
+/* Spell it */
+.spell-tiles{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0}
+.spell-tile{width:52px;height:58px;border-radius:12px;font-size:1.5rem;font-weight:800;border:2px solid;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,opacity .15s;user-select:none}
+.spell-tile:active{transform:scale(.9)}
+.spell-tile.used{opacity:.25;pointer-events:none}
+.spell-answer{display:flex;gap:8px;justify-content:center;margin:12px 0;min-height:62px;flex-wrap:wrap}
+.spell-slot{width:52px;height:58px;border-radius:12px;border:2px dashed #c7d2fe;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:800;background:#fff;cursor:pointer}
+.spell-slot.filled{border-style:solid;cursor:pointer}
+/* Certificate */
+.cert{background:#fff;border-radius:24px;padding:36px 32px;max-width:480px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.15);position:relative;overflow:hidden}
+.cert-border{position:absolute;inset:10px;border-radius:16px;border:3px double #e0e7ff;pointer-events:none}
+.cert-corner{position:absolute;font-size:1.6rem;line-height:1}
+.cert-title{font-size:2rem;font-weight:800;margin-bottom:4px}
+.cert-subtitle{font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;color:#888;margin-bottom:16px}
+.cert-name{font-size:2rem;font-weight:800;margin:10px 0;font-style:italic}
+.cert-date{margin-top:20px;font-size:.8rem;color:#aaa;border-top:1px solid #f0f0f0;padding-top:12px}
+/* Hall */
+.hall-row{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#fff;border-radius:12px;margin:5px 0;width:100%;max-width:420px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+/* Confetti */
+.confetti-piece{position:fixed;width:10px;height:10px;border-radius:2px;pointer-events:none;z-index:9999;animation:confettiFall 2s ease-in forwards}
+@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+/* WOTD */
+.wotd-card{background:#fff;border-radius:18px;padding:16px 20px;width:100%;max-width:320px;box-shadow:0 3px 12px rgba(0,0,0,.1);border:2px solid #fde68a;margin-bottom:16px;text-align:center}
+/* Streak */
+.streak-badge{display:inline-flex;align-items:center;gap:6px;background:#fff7ed;border:2px solid #fb923c;border-radius:99px;padding:6px 16px;font-weight:700;font-size:.95rem;color:#c2410c;margin-bottom:12px}
+/* Stars */
+.stars-display{font-size:2rem;letter-spacing:4px}
+/* Card wrap */
+.card-wrap{background:#fff;border-radius:20px;padding:24px;width:100%;max-width:420px;box-shadow:0 3px 16px rgba(0,0,0,.1);margin-bottom:12px;border:1.5px solid #e0e7ff}
+/* Print */
+@media print{body{background:#fff}.screen{display:none!important}#s-cert{display:flex!important;min-height:auto}.btn{display:none!important}}
+</style>
+</head>
+<body>
 
+<!-- Welcome -->
+<div class="screen active" id="s-welcome">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center">
+    <div style="font-size:5rem;margin:8px 0;cursor:pointer;user-select:none" id="trophy-tap" onclick="secretTap()">🏆</div>
+    <h1>Tricky Word<br>Champion!</h1>
+    <div class="wotd-card" id="wotd-card"></div>
+    <div class="streak-badge" id="streak-badge"></div>
+    <input class="name-input" id="player-name" type="text" placeholder="Enter your name..." maxlength="30"/>
+    <button class="btn btn-primary" onclick="startGame()">Let's Go! 🚀</button>
+    <button class="btn btn-outline" onclick="showHall()">Hall of Fame 🌟</button>
+  </div>
+</div>
+
+<!-- Map -->
+<div class="screen" id="s-map">
+  <div style="width:100%;max-width:460px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <button class="btn btn-outline" style="padding:8px 16px;font-size:.85rem" onclick="showScreen('s-welcome')">← Back</button>
+      <div id="map-greeting" style="font-weight:700;font-size:.95rem;color:#444"></div>
+    </div>
+    <h2 style="margin-top:12px">Choose your challenge</h2>
+    <p class="subtitle" id="map-progress"></p>
+    <div class="map-grid" id="map-grid"></div>
+  </div>
+</div>
+
+<!-- Mode Select -->
+<div class="screen" id="s-mode">
+  <div class="mode-screen-inner">
+    <button class="btn btn-outline" style="padding:8px 16px;font-size:.85rem;align-self:flex-start;margin-bottom:16px" onclick="showScreen('s-map');buildMap()">← Back</button>
+    <div id="mode-level-badge"></div>
+    <h2 id="mode-heading" style="margin-bottom:4px"></h2>
+    <p id="mode-wordcount" style="color:#555;font-size:.9rem;margin-bottom:18px"></p>
+    <div class="mode-card" id="mode-prac-card" onclick="startPractice()">
+      <div class="mode-icon">📖</div>
+      <div class="mode-title">Practice Mode</div>
+      <div class="mode-desc">Words one by one — learn at your own pace!</div>
+    </div>
+    <div class="mode-card" id="mode-ch-card" onclick="startChallenge()">
+      <div class="mode-icon">⏱️</div>
+      <div class="mode-title">Challenge Mode</div>
+      <div class="mode-desc">Tap every word in 1 minute to win!</div>
+    </div>
+    <div class="mode-card" id="mode-rf-card" onclick="startRapidFire()">
+      <div class="mode-icon">⚡</div>
+      <div class="mode-title">Rapid Fire Mode</div>
+      <div class="mode-desc">Words flash fast — can you read them all?</div>
+    </div>
+    <div class="mode-card" id="mode-sp-card" onclick="startSpell()">
+      <div class="mode-icon">🔤</div>
+      <div class="mode-title">Spell It Out</div>
+      <div class="mode-desc">Tap the letters to spell each tricky word!</div>
+    </div>
+  </div>
+</div>
+
+<!-- Practice -->
+<div class="screen" id="s-practice">
+  <div class="prac-inner">
+    <button class="btn btn-outline" style="padding:8px 16px;font-size:.85rem;align-self:flex-start;margin-bottom:8px" onclick="showScreen('s-mode')">← Back</button>
+    <h2 id="prac-title"></h2>
+    <div class="progress-bar-wrap" style="width:100%"><div class="progress-bar" id="prac-bar"></div></div>
+    <p class="progress-text" id="prac-progress"></p>
+    <div class="word-display" id="prac-word"></div>
+    <div class="btn-row">
+      <button class="btn btn-outline" id="prac-prev" onclick="pracNav(-1)" style="font-size:1.1rem;padding:16px 28px">← Prev</button>
+      <button class="btn btn-primary" id="prac-next" onclick="pracNav(1)" style="font-size:1.1rem;padding:16px 28px">Next →</button>
+    </div>
+    <button class="btn btn-outline" style="margin-top:20px" onclick="showScreen('s-mode')">Done practising ✓</button>
+  </div>
+</div>
+
+<!-- Challenge -->
+<div class="screen" id="s-challenge">
+  <div class="ch-inner">
+    <div class="ch-header">
+      <h2 id="ch-title" style="margin-bottom:2px"></h2>
+      <p style="color:#555;font-size:.9rem;margin-bottom:8px">Tap each word as you read it, then press Finish!</p>
+      <div class="timer-display" id="ch-timer">1:00</div>
+      <div class="timer-bar-wrap"><div class="timer-bar" id="ch-bar" style="width:100%;background:#16a34a"></div></div>
+      <div id="ch-tally" style="font-size:.95rem;color:#555;margin-top:6px;font-weight:600"></div>
+    </div>
+    <div class="word-grid" id="ch-grid"></div>
+    <button class="btn btn-success" style="font-size:1.15rem;padding:18px 52px;margin-bottom:20px" onclick="endChallenge(true)">✅ Finished! I read them all!</button>
+    <div id="ch-start-overlay" style="position:fixed;inset:0;background:rgba(255,255,255,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99">
+      <div style="font-size:6rem;font-weight:800;color:#4f46e5" id="countdown-num">3</div>
+      <div style="font-size:1.2rem;color:#555">Get ready!</div>
+    </div>
+  </div>
+</div>
+
+<!-- Rapid Fire -->
+<div class="screen" id="s-rapidfire">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:440px">
+    <button class="btn btn-outline" style="padding:8px 16px;font-size:.85rem;align-self:flex-start;margin-bottom:12px" onclick="stopRapidFire()">← Back</button>
+    <h2 id="rf-title"></h2>
+    <p style="color:#555;font-size:.9rem;margin-bottom:12px;text-align:center">Read each word as it appears!</p>
+    <div class="rf-bar-wrap"><div class="rf-bar" id="rf-bar" style="width:100%"></div></div>
+    <p class="progress-text" id="rf-progress"></p>
+    <div class="rf-word" id="rf-word"></div>
+    <div id="rf-result" style="display:none;text-align:center;margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- Spell It -->
+<div class="screen" id="s-spell">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:440px">
+    <button class="btn btn-outline" style="padding:8px 16px;font-size:.85rem;align-self:flex-start;margin-bottom:12px" onclick="showScreen('s-mode')">← Back</button>
+    <h2 id="sp-title"></h2>
+    <p class="progress-text" id="sp-progress"></p>
+    <div style="background:#fff;border-radius:16px;padding:16px 24px;margin-bottom:8px;font-size:.95rem;color:#555;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.07)">Tap the letters to spell the word shown above!</div>
+    <div class="word-display" id="sp-target" style="font-size:3rem;min-height:90px;margin:10px 0"></div>
+    <div class="spell-answer" id="sp-answer"></div>
+    <div class="spell-tiles" id="sp-tiles"></div>
+    <div id="sp-feedback" style="font-size:1.1rem;font-weight:700;min-height:32px;margin:8px 0;text-align:center"></div>
+    <button class="btn btn-outline" onclick="spellClear()">Clear ✕</button>
+  </div>
+</div>
+
+<!-- Result -->
+<div class="screen" id="s-result">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:420px">
+    <div class="card-wrap" id="result-content"></div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn btn-outline" id="result-retry-btn">Try again</button>
+      <button class="btn btn-primary" onclick="showScreen('s-map');buildMap()">Map 🗺️</button>
+    </div>
+  </div>
+</div>
+
+<!-- Certificate -->
+<div class="screen" id="s-cert">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:500px;padding:10px">
+    <div class="cert" id="cert-content"></div>
+    <div class="btn-row" style="margin-top:20px">
+      <button class="btn btn-outline" onclick="window.print()">🖨️ Print</button>
+      <button class="btn btn-primary" onclick="showScreen('s-map');buildMap()">Next challenge! 🚀</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Stats -->
+<div class="screen" id="s-admin">
+  <div style="width:100%;max-width:480px">
+    <button class="btn btn-outline" style="padding:8px 16px;font-size:.85rem;margin-bottom:16px" onclick="showScreen('s-welcome')">← Back</button>
+    <h2>📊 Usage Dashboard</h2>
+    <p class="subtitle">Secret admin view</p>
+    <div id="admin-content"><p style="color:#555;text-align:center">Loading stats...</p></div>
+  </div>
+</div>
+
+<!-- Hall of Fame -->
+<div class="screen" id="s-hall">
+  <div style="width:100%;max-width:460px">
+    <button class="btn btn-outline" style="padding:8px 16px;font-size:.85rem;margin-bottom:16px" onclick="showScreen('s-welcome')">← Back</button>
+    <h2>🌟 Hall of Fame</h2>
+    <p class="subtitle">Top tricky word champions</p>
+    <div id="hall-list"></div>
+    <h2 style="margin-top:24px">📋 Progress Reports</h2>
+    <p class="subtitle">Select a child to view or reset their progress</p>
+    <div id="report-list"></div>
+  </div>
+</div>
+
+<!-- Progress Report -->
+<div class="screen" id="s-report">
+  <div style="width:100%;max-width:480px">
+    <button class="btn btn-outline" style="padding:8px 16px;font-size:.85rem;margin-bottom:16px" onclick="showScreen('s-hall')">← Back</button>
+    <div id="report-content"></div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn btn-outline" onclick="window.print()">🖨️ Print Report</button>
+      <button class="btn btn-danger" id="reset-btn"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CHALLENGES=[
+  {name:'Red',    words:['put','the','I','no','of','my','he','your','said'],                                                                           cardBg:'#c00000',wordBg:'#ff2222',wordText:'#fff',chipBg:'rgba(255,34,34,.1)',chipBorder:'#ff2222',chipColor:'#7f1d1d',  modePracBg:'#f0fdf4',modePracBorder:'#16a34a',modePracText:'#166534', modeChBg:'#fff0f0',modeChBorder:'#ff2222',modeChText:'#c00000'},
+  {name:'Orange', words:['you','be','are','to','me','go','so','we','is','she'],                                                                        cardBg:'#c45000',wordBg:'#ff7700',wordText:'#fff',chipBg:'rgba(255,119,0,.1)',chipBorder:'#ff7700',chipColor:'#7c2d12',  modePracBg:'#f0fdf4',modePracBorder:'#16a34a',modePracText:'#166534', modeChBg:'#fff7ed',modeChBorder:'#ff7700',modeChText:'#c45000'},
+  {name:'Yellow', words:['a','some','do','by','come','has','his','was','they'],                                                                         cardBg:'#a07800',wordBg:'#f59e0b',wordText:'#fff',chipBg:'rgba(245,158,11,.12)',chipBorder:'#f59e0b',chipColor:'#713f12',modePracBg:'#f0fdf4',modePracBorder:'#16a34a',modePracText:'#166534', modeChBg:'#fffbeb',modeChBorder:'#f59e0b',modeChText:'#a07800'},
+  {name:'Green',  words:['here','there','push','school','one','ask','house','were','our'],                                                              cardBg:'#166534',wordBg:'#16a34a',wordText:'#fff',chipBg:'rgba(22,163,74,.1)',chipBorder:'#16a34a',chipColor:'#14532d',  modePracBg:'#f0fdf4',modePracBorder:'#16a34a',modePracText:'#166534', modeChBg:'#f0fdf4',modeChBorder:'#16a34a',modeChText:'#166534'},
+  {name:'Blue',   words:['today','says','once','friend','pull','full','where','love','any'],                                                            cardBg:'#1d4ed8',wordBg:'#2563eb',wordText:'#fff',chipBg:'rgba(37,99,235,.1)',chipBorder:'#2563eb',chipColor:'#1e3a8a',  modePracBg:'#f0fdf4',modePracBorder:'#16a34a',modePracText:'#166534', modeChBg:'#eff6ff',modeChBorder:'#2563eb',modeChText:'#1d4ed8'},
+  {name:'Indigo', words:['old','Mr','Mrs','who','even','eye','cold','break','people'],                                                                  cardBg:'#3730a3',wordBg:'#4f46e5',wordText:'#fff',chipBg:'rgba(79,70,229,.1)',chipBorder:'#4f46e5',chipColor:'#312e81',  modePracBg:'#f0fdf4',modePracBorder:'#16a34a',modePracText:'#166534', modeChBg:'#eef2ff',modeChBorder:'#4f46e5',modeChText:'#3730a3'},
+  {name:'Violet', words:['could','water','busy','half','money','after','child','because','door'],                                                       cardBg:'#6b21a8',wordBg:'#9333ea',wordText:'#fff',chipBg:'rgba(147,51,234,.1)',chipBorder:'#9333ea',chipColor:'#4a1d96', modePracBg:'#f0fdf4',modePracBorder:'#16a34a',modePracText:'#166534', modeChBg:'#faf5ff',modeChBorder:'#9333ea',modeChText:'#6b21a8'},
+  {name:'Bronze', words:['floor','find','wild','children','most','only','both','class','should','plant','hour','gold','prove','sure'],                  cardBg:'#92400e',wordBg:'#b45309',wordText:'#fff',chipBg:'rgba(180,83,9,.1)',chipBorder:'#b45309',chipColor:'#451a03',   modePracBg:'#f0fdf4',modePracBorder:'#16a34a',modePracText:'#166534', modeChBg:'#fef3c7',modeChBorder:'#b45309',modeChText:'#92400e'},
+  {name:'Silver', words:['every','clothes','told','hold','great','pretty','father','last','pass','many','again','kind','fast','would'],                 cardBg:'#374151',wordBg:'#6b7280',wordText:'#fff',chipBg:'rgba(107,114,128,.1)',chipBorder:'#6b7280',chipColor:'#1f2937', modePracBg:'#f0fdf4',modePracBorder:'#16a34a',modePracText:'#166534', modeChBg:'#f9fafb',modeChBorder:'#6b7280',modeChText:'#374151'},
+  {name:'Gold',   words:['poor','behind','climb','improve','move','path','bath','sugar','grass','whole','parents','Christmas','beautiful','everybody'], cardBg:'#92400e',wordBg:'#d97706',wordText:'#fff',chipBg:'rgba(217,119,6,.1)',chipBorder:'#d97706',chipColor:'#451a03',   modePracBg:'#f0fdf4',modePracBorder:'#16a34a',modePracText:'#166534', modeChBg:'#fffbeb',modeChBorder:'#d97706',modeChText:'#92400e'},
+];
+
+const WOTD_SENTENCES={
+  put:"Can you put your shoes on?", the:"Look at the big red bus!",
+  I:"I can read this word!", no:"No, thank you!", of:"A cup of tea.", my:"This is my book.",
+  he:"He can run fast.", your:"Where is your coat?", said:"She said hello.",
+  you:"Can you see me?", be:"I want to be a teacher.", are:"You are brilliant!",
+  to:"Let's go to the park.", me:"Come with me!", go:"Ready, steady, go!",
+  so:"It is so sunny today.", we:"We are best friends.", is:"This is my dog.", she:"She likes to read.",
+  a:"I have a cat.", some:"Can I have some cake?", do:"What do you like to eat?",
+  by:"Stand by the door.", come:"Come and play!", has:"She has a big smile.",
+  his:"That is his hat.", was:"It was a sunny day.", they:"They are my friends.",
+  here:"Come and sit here.", there:"Look over there!", push:"Push the door open.",
+  school:"I love going to school.", one:"I have one apple.", ask:"Always ask for help.",
+  house:"I live in a little house.", were:"We were very happy.", our:"This is our classroom.",
+};
+
+let playerName='',currentLevel=0,pracIdx=0,chTimer=null,chSeconds=60,ticked=new Set();
+let rfTimer=null,rfIdx=0,rfWords=[],rfInterval=2000;
+let spWords=[],spIdx=0,spAnswer=[],spScore=0;
+
+function getProgress(){try{return JSON.parse(localStorage.getItem('twc_v2_prog')||'{}')}catch{return{}}}
+function saveProgress(p){try{localStorage.setItem('twc_v2_prog',JSON.stringify(p))}catch{}}
+function getHall(){try{return JSON.parse(localStorage.getItem('twc_v2_hall')||'[]')}catch{return[]}}
+function saveHall(h){try{localStorage.setItem('twc_v2_hall',JSON.stringify(h))}catch{}}
+function getStreaks(){try{return JSON.parse(localStorage.getItem('twc_v2_streaks')||'{}')}catch{return{}}}
+function saveStreaks(s){try{localStorage.setItem('twc_v2_streaks',JSON.stringify(s))}catch{}}
+function getStars(){try{return JSON.parse(localStorage.getItem('twc_v2_stars')||'{}')}catch{return{}}}
+function saveStars(s){try{localStorage.setItem('twc_v2_stars',JSON.stringify(s))}catch{}}
+
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
+
+function initWelcome(){
+  // Word of the day
+  const allWords=CHALLENGES.flatMap(c=>c.words);
+  const idx=Math.floor(Date.now()/86400000)%allWords.length;
+  const w=allWords[idx];
+  const sentence=WOTD_SENTENCES[w]||'This is a tricky word!';
+  document.getElementById('wotd-card').innerHTML=`<div style="font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b45309;margin-bottom:4px">⭐ Word of the Day</div><div style="font-size:2rem;font-weight:800;color:#d97706;margin:4px 0">${w}</div><div style="font-size:.88rem;color:#555;font-style:italic">"${sentence}"</div>`;
+  // Streak
+  const streaks=getStreaks();
+  const todayKey=new Date().toISOString().slice(0,10);
+  const globalStreak=streaks['_global']||{count:0,last:''};
+  const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+  let streak=globalStreak.count;
+  if(globalStreak.last===todayKey){}
+  else if(globalStreak.last===yesterday){streak++;}
+  else{streak=1;}
+  streaks['_global']={count:streak,last:todayKey};
+  saveStreaks(streaks);
+  document.getElementById('streak-badge').innerHTML=`🔥 ${streak} day streak`;
+}
+
+function startGame(){
+  playerName=document.getElementById('player-name').value.trim()||'Champion';
+  showScreen('s-map');buildMap();
+}
+
+function buildMap(){
+  const completed=getProgress()[playerName]||[];
+  const stars=getStars()[playerName]||{};
+  document.getElementById('map-greeting').textContent=playerName+"'s progress";
+  const totalStars=Object.values(stars).reduce((a,b)=>a+b,0);
+  document.getElementById('map-progress').textContent=completed.length+' of 10 completed · '+totalStars+' ⭐ earned';
+  const grid=document.getElementById('map-grid');grid.innerHTML='';
+  CHALLENGES.forEach((ch,i)=>{
+    const done=completed.includes(i),unlocked=i===0||completed.includes(i-1);
+    const s=stars[i]||0;
+    const starsHtml=done?'<div style="font-size:.85rem;letter-spacing:2px">'+'⭐'.repeat(s)+'☆'.repeat(3-s)+'</div>':'';
+    const card=document.createElement('div');
+    card.className='challenge-card'+(done?' completed':'')+((!unlocked&&!done)?' locked':'');
+    card.style.cssText=`background:${ch.cardBg};${done?'border-color:'+ch.wordBg:''}`;
+    card.innerHTML=`<div class="card-level">Challenge ${i+1}</div><div class="card-name">${ch.name}</div><div class="card-count">${ch.words.length} words</div>${starsHtml}${done?'<div class="card-badge">✓</div>':''}${(!unlocked&&!done)?'<div class="card-badge">🔒</div>':''}`;
+    if(unlocked||done){card.onclick=()=>{currentLevel=i;showModeScreen();}}
+    grid.appendChild(card);
+  });
+}
+
+function showModeScreen(){
+  const ch=CHALLENGES[currentLevel];
+  document.getElementById('mode-level-badge').innerHTML=`<span class="mode-badge" style="background:${ch.wordBg};color:${ch.wordText}">Challenge ${currentLevel+1} — ${ch.name}</span>`;
+  document.getElementById('mode-heading').textContent='How do you want to play?';
+  document.getElementById('mode-wordcount').textContent=ch.words.length+' tricky words';
+  const colourCard=(id,bg,border,text)=>{const c=document.getElementById(id);c.style.background=bg;c.style.borderColor=border;c.querySelectorAll('.mode-title,.mode-desc').forEach(el=>el.style.color=text);};
+  colourCard('mode-prac-card',ch.modePracBg,ch.modePracBorder,ch.modePracText);
+  colourCard('mode-ch-card',ch.modeChBg,ch.modeChBorder,ch.modeChText);
+  colourCard('mode-rf-card','#fdf4ff','#c026d3','#86198f');
+  colourCard('mode-sp-card','#f0f9ff','#0284c7','#075985');
+  showScreen('s-mode');
+}
+
+// ---- PRACTICE ----
+function startPractice(){pracIdx=0;document.getElementById('prac-title').textContent=CHALLENGES[currentLevel].name+' Words';updatePrac();showScreen('s-practice');}
+function updatePrac(){
+  const ch=CHALLENGES[currentLevel],el=document.getElementById('prac-word');
+  el.textContent=ch.words[pracIdx];el.style.background=ch.wordBg;el.style.color=ch.wordText;
+  const pct=((pracIdx+1)/ch.words.length*100).toFixed(0);
+  document.getElementById('prac-bar').style.width=pct+'%';document.getElementById('prac-bar').style.background=ch.wordBg;
+  document.getElementById('prac-progress').textContent=(pracIdx+1)+' of '+ch.words.length+' words';
+  document.getElementById('prac-prev').style.opacity=pracIdx===0?.3:1;
+  document.getElementById('prac-next').textContent=pracIdx===ch.words.length-1?'Finish ✓':'Next →';
+}
+function pracNav(d){const ch=CHALLENGES[currentLevel],next=pracIdx+d;if(next<0)return;if(next>=ch.words.length){showScreen('s-mode');return;}pracIdx=next;updatePrac();}
+
+// ---- CHALLENGE ----
+function startChallenge(){
+  clearInterval(chTimer);ticked=new Set();chSeconds=60;
+  const ch=CHALLENGES[currentLevel];
+  document.getElementById('ch-title').textContent=ch.name+' Challenge';
+  const grid=document.getElementById('ch-grid');grid.innerHTML='';
+  [...ch.words].sort(()=>Math.random()-.5).forEach(w=>{
+    const chip=document.createElement('div');chip.className='word-chip';chip.textContent=w;chip.dataset.word=w;
+    chip.style.background=ch.chipBg;chip.style.borderColor=ch.chipBorder;chip.style.color=ch.chipColor;
+    chip.onclick=()=>{if(ticked.has(w)){ticked.delete(w);chip.classList.remove('ticked');chip.style.background=ch.chipBg;chip.style.borderColor=ch.chipBorder;chip.style.color=ch.chipColor;}else{ticked.add(w);chip.classList.add('ticked');chip.style.background='';chip.style.borderColor='';chip.style.color='';}updateTally();};
+    grid.appendChild(chip);
+  });
+  document.getElementById('ch-bar').style.width='100%';document.getElementById('ch-bar').style.background='#16a34a';
+  document.getElementById('result-retry-btn').onclick=startChallenge;
+  updateTally();showScreen('s-challenge');updateTimer();
+  const ov=document.getElementById('ch-start-overlay');ov.style.display='flex';
+  let c=3;document.getElementById('countdown-num').textContent=c;
+  const cd=setInterval(()=>{c--;if(c>0)document.getElementById('countdown-num').textContent=c;else if(c===0)document.getElementById('countdown-num').textContent='GO! 🚀';else{clearInterval(cd);ov.style.display='none';chTimer=setInterval(()=>{chSeconds--;updateTimer();if(chSeconds<=0){clearInterval(chTimer);endChallenge(false);}},1000);}},800);
+}
+function updateTally(){const ch=CHALLENGES[currentLevel];document.getElementById('ch-tally').textContent=ticked.size+' / '+ch.words.length+' words tapped';}
+function updateTimer(){const m=Math.floor(chSeconds/60),s=chSeconds%60;document.getElementById('ch-timer').textContent=m+':'+(s<10?'0':'')+s;const bar=document.getElementById('ch-bar');bar.style.width=(chSeconds/60*100)+'%';bar.style.background=chSeconds<=15?'#dc2626':chSeconds<=30?'#f97316':'#16a34a';}
+function endChallenge(manual){
+  clearInterval(chTimer);const ch=CHALLENGES[currentLevel];
+  const allTicked=ch.words.every(w=>ticked.has(w));
+  if(!allTicked){document.querySelectorAll('.word-chip').forEach(chip=>{if(!ticked.has(chip.dataset.word)){chip.classList.add('unticked');chip.style.background='';chip.style.borderColor='';chip.style.color='';}});}
+  if(allTicked){
+    const elapsed=60-chSeconds;
+    const s=elapsed<=30?3:elapsed<=50?2:1;
+    recordPass(currentLevel,s);
+    launchConfetti(ch.wordBg);
+    setTimeout(()=>showCertificate(s),800);
+  } else {
+    const missed=ch.words.filter(w=>!ticked.has(w));
+    document.getElementById('result-content').innerHTML=`<div style="text-align:center"><div style="font-size:3rem">😅</div><h2 style="margin:12px 0">So close!</h2><p style="color:#555;margin-bottom:16px">You missed ${missed.length} word${missed.length!==1?'s':''}${!manual?' — time ran out!':''}</p><div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">${missed.map(w=>`<span style="background:${ch.wordBg};color:${ch.wordText};padding:8px 16px;border-radius:10px;font-size:1.1rem;font-weight:700">${w}</span>`).join('')}</div><p style="margin-top:16px;color:#555;font-size:.9rem">Practise these words then try again!</p></div>`;
+    showScreen('s-result');
+  }
+}
+
+// ---- RAPID FIRE ----
+function startRapidFire(){
+  clearInterval(rfTimer);rfIdx=0;
+  const ch=CHALLENGES[currentLevel];
+  rfWords=[...ch.words].sort(()=>Math.random()-.5);
+  document.getElementById('rf-title').textContent=ch.name+' — Rapid Fire!';
+  document.getElementById('rf-result').style.display='none';
+  document.getElementById('rf-word').style.background=ch.wordBg;document.getElementById('rf-word').style.color=ch.wordText;
+  document.getElementById('rf-bar').style.background=ch.wordBg;
+  document.getElementById('result-retry-btn').onclick=startRapidFire;
+  showScreen('s-rapidfire');showRFWord();
+}
+function showRFWord(){
+  if(rfIdx>=rfWords.length){rfDone();return;}
+  const total=rfWords.length;
+  document.getElementById('rf-progress').textContent=(rfIdx+1)+' of '+total;
+  document.getElementById('rf-bar').style.width=((rfIdx+1)/total*100)+'%';
+  const el=document.getElementById('rf-word');
+  el.style.opacity='0';
+  setTimeout(()=>{el.textContent=rfWords[rfIdx];el.style.opacity='1';},200);
+  rfTimer=setTimeout(()=>{rfIdx++;showRFWord();},rfInterval);
+}
+function rfDone(){
+  document.getElementById('rf-result').style.display='block';
+  document.getElementById('rf-result').innerHTML=`<div style="font-size:2.5rem">🎉</div><h2 style="margin:8px 0">Amazing!</h2><p style="color:#555">You read all ${rfWords.length} words in Rapid Fire mode!</p><div class="btn-row" style="margin-top:16px"><button class="btn btn-outline" onclick="startRapidFire()">Go again ⚡</button><button class="btn btn-primary" onclick="showScreen('s-mode')">Back to modes</button></div>`;
+}
+function stopRapidFire(){clearInterval(rfTimer);showScreen('s-mode');}
+
+// ---- SPELL IT ----
+function startSpell(){
+  const ch=CHALLENGES[currentLevel];
+  spWords=[...ch.words].sort(()=>Math.random()-.5);
+  spIdx=0;spScore=0;
+  document.getElementById('sp-title').textContent=ch.name+' — Spell It Out!';
+  document.getElementById('result-retry-btn').onclick=startSpell;
+  showScreen('s-spell');loadSpellWord();
+}
+function loadSpellWord(){
+  if(spIdx>=spWords.length){spDone();return;}
+  const ch=CHALLENGES[currentLevel],w=spWords[spIdx];
+  spAnswer=[];
+  document.getElementById('sp-progress').textContent=(spIdx+1)+' of '+spWords.length;
+  document.getElementById('sp-target').textContent=w;
+  document.getElementById('sp-target').style.background=ch.wordBg;
+  document.getElementById('sp-target').style.color=ch.wordText;
+  document.getElementById('sp-feedback').textContent='';
+  // Build shuffled letter tiles
+  const letters=w.split('').sort(()=>Math.random()-.5);
+  // Add 2 decoy letters
+  const decoys='abcdefghijklmnoprstuw'.split('').filter(l=>!w.includes(l));
+  for(let i=0;i<2&&decoys.length;i++){const d=decoys.splice(Math.floor(Math.random()*decoys.length),1)[0];const pos=Math.floor(Math.random()*(letters.length+1));letters.splice(pos,0,d);}
+  const tilesEl=document.getElementById('sp-tiles');tilesEl.innerHTML='';
+  letters.forEach((l,i)=>{
+    const t=document.createElement('div');t.className='spell-tile';t.textContent=l;t.dataset.idx=i;
+    t.style.background=ch.chipBg;t.style.borderColor=ch.chipBorder;t.style.color=ch.chipColor;
+    t.onclick=()=>{if(t.classList.contains('used'))return;spAnswer.push({letter:l,tileIdx:i,el:t});t.classList.add('used');renderAnswer();checkSpell();};
+    tilesEl.appendChild(t);
+  });
+  renderAnswer();
+}
+function renderAnswer(){
+  const ch=CHALLENGES[currentLevel],w=spWords[spIdx];
+  const el=document.getElementById('sp-answer');el.innerHTML='';
+  for(let i=0;i<w.length;i++){
+    const slot=document.createElement('div');slot.className='spell-slot'+(i<spAnswer.length?' filled':'');
+    if(i<spAnswer.length){slot.textContent=spAnswer[i].letter;slot.style.background=ch.chipBg;slot.style.borderColor=ch.chipBorder;slot.style.color=ch.chipColor;}
+    el.appendChild(slot);
+  }
+}
+function spellClear(){spAnswer.forEach(a=>a.el.classList.remove('used'));spAnswer=[];renderAnswer();document.getElementById('sp-feedback').textContent='';}
+function checkSpell(){
+  const w=spWords[spIdx];
+  if(spAnswer.length<w.length)return;
+  const attempt=spAnswer.map(a=>a.letter).join('');
+  if(attempt===w){
+    spScore++;
+    document.getElementById('sp-feedback').innerHTML='<span style="color:#16a34a">✓ Correct! Well done!</span>';
+    launchConfetti(CHALLENGES[currentLevel].wordBg);
+    setTimeout(()=>{spIdx++;loadSpellWord();},900);
+  } else {
+    document.getElementById('sp-feedback').innerHTML='<span style="color:#dc2626">✗ Not quite — try again!</span>';
+    setTimeout(spellClear,700);
+  }
+}
+function spDone(){
+  document.getElementById('result-content').innerHTML=`<div style="text-align:center"><div style="font-size:3rem">🔤</div><h2 style="margin:12px 0">Spelling complete!</h2><p style="color:#555;font-size:1.1rem">You spelled <strong>${spScore} of ${spWords.length}</strong> words correctly!</p><div style="font-size:2rem;margin:12px 0">${spScore===spWords.length?'🌟🌟🌟':spScore>=spWords.length/2?'⭐⭐':'⭐'}</div><p style="color:#555;font-size:.9rem;margin-top:8px">${spScore===spWords.length?'Perfect score! You\'re a spelling superstar!':'Keep practising and you\'ll get them all!'}</p></div>`;
+  showScreen('s-result');
+}
+
+// ---- PASS & STARS ----
+function recordPass(level,stars){
+  const prog=getProgress();const completed=prog[playerName]||[];
+  if(!completed.includes(level))completed.push(level);
+  prog[playerName]=completed;saveProgress(prog);
+  const st=getStars();const ps=st[playerName]||{};
+  if(!ps[level]||stars>ps[level])ps[level]=stars;
+  st[playerName]=ps;saveStars(st);
+  const hall=getHall();const ex=hall.find(h=>h.name===playerName);
+  if(ex){if(!ex.levels.includes(level))ex.levels.push(level);}else hall.push({name:playerName,levels:[level]});
+  saveHall(hall);
+}
+
+// ---- CONFETTI ----
+function launchConfetti(color){
+  const colors=[color,'#fbbf24','#34d399','#60a5fa','#f472b6','#a78bfa'];
+  for(let i=0;i<70;i++){
+    const c=document.createElement('div');c.className='confetti-piece';
+    c.style.cssText=`left:${Math.random()*100}vw;background:${colors[Math.floor(Math.random()*colors.length)]};width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;animation-duration:${1.5+Math.random()}s;animation-delay:${Math.random()*.5}s;border-radius:${Math.random()>.5?'50%':'2px'}`;
+    document.body.appendChild(c);setTimeout(()=>c.remove(),2500);
+  }
+}
+
+// ---- CERTIFICATE ----
+function showCertificate(stars=3){
+  const ch=CHALLENGES[currentLevel];const isChamp=currentLevel===9;
+  const starRow='⭐'.repeat(stars)+'☆'.repeat(3-stars);
+  document.getElementById('cert-content').innerHTML=`
+    <div class="cert" style="border:4px solid ${ch.wordBg}">
+      <div class="cert-border" style="border-color:${ch.wordBg}33"></div>
+      <div class="cert-corner" style="top:14px;left:16px">✨</div><div class="cert-corner" style="top:14px;right:16px">✨</div>
+      <div class="cert-corner" style="bottom:14px;left:16px">✨</div><div class="cert-corner" style="bottom:14px;right:16px">✨</div>
+      <div style="font-size:3rem;margin-bottom:6px">${isChamp?'🏆':'🎓'}</div>
+      <div class="cert-title" style="color:${ch.wordBg}">${isChamp?'Champion Certificate':'Certificate of Achievement'}</div>
+      <div class="cert-subtitle">Tricky Word Challenge</div>
+      <div style="height:2px;background:linear-gradient(90deg,transparent,${ch.wordBg},transparent);margin:10px 0 14px"></div>
+      <p style="font-size:.9rem;color:#888;margin-bottom:4px">This certificate is proudly awarded to</p>
+      <div class="cert-name" style="color:${ch.wordBg}">${playerName}</div>
+      <p style="font-size:.9rem;color:#888;margin-bottom:6px">for successfully completing</p>
+      <div style="display:inline-block;background:${ch.wordBg};color:${ch.wordText};padding:8px 24px;border-radius:99px;font-size:1.1rem;font-weight:800;margin-bottom:12px">${ch.name} Challenge</div>
+      ${isChamp?`<p style="font-weight:800;font-size:1.1rem;color:${ch.wordBg};margin:6px 0">and achieving the title of<br><span style="font-size:1.4rem">TRICKY WORD CHAMPION!</span></p>`:''}
+      <div style="font-size:2.2rem;margin:10px 0;letter-spacing:4px">${starRow}</div>
+      <p style="font-size:.95rem;color:#555;line-height:1.6">${stars===3?'Superstar speed! Completed in under 30 seconds!':stars===2?'Brilliant effort! Completed in under 50 seconds!':'Well done! Every great champion starts one challenge at a time!'}</p>
+      <div class="cert-date">Awarded on ${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+    </div>`;
+  showScreen('s-cert');
+}
+
+// ---- HALL OF FAME ----
+function showHall(){
+  const hall=getHall();const stars=getStars();const list=document.getElementById('hall-list');
+  if(!hall.length){list.innerHTML='<p style="color:#555;text-align:center;margin-top:8px">No champions yet — be the first! 🌟</p>';}
+  else{
+    const sorted=hall.map(h=>{const ps=stars[h.name]||{};const tot=Object.values(ps).reduce((a,b)=>a+b,0);return{...h,totalStars:tot};}).sort((a,b)=>b.totalStars-a.totalStars||b.levels.length-a.levels.length);
+    list.innerHTML=sorted.map((h,rank)=>{
+      const top=Math.max(...h.levels);const ch=CHALLENGES[top];
+      return`<div class="hall-row"><div style="display:flex;align-items:center;gap:10px"><div style="font-size:1.3rem;font-weight:800;color:#94a3b8;min-width:24px">${rank+1}</div><div><div style="font-weight:700;color:#1a1a2e">${h.name}</div><div style="font-size:.8rem;color:#555">${h.levels.length} challenge${h.levels.length!==1?'s':''} · ${'⭐'.repeat(Math.min(h.totalStars,10))}</div></div></div><span style="background:${ch.wordBg};color:${ch.wordText};padding:4px 12px;border-radius:99px;font-size:.8rem;font-weight:700">${ch.name}</span></div>`;
+    }).join('');
+  }
+  // Progress reports
+  const prog=getProgress();const names=Object.keys(prog);
+  const rpt=document.getElementById('report-list');
+  if(!names.length){rpt.innerHTML='<p style="color:#555;text-align:center;margin-top:8px">No progress saved yet.</p>';}
+  else{rpt.innerHTML=names.map(n=>`<div class="hall-row"><div style="font-weight:700;color:#1a1a2e">${n}</div><button class="btn btn-outline" style="padding:6px 14px;font-size:.85rem;margin:0" onclick="showReport('${n}')">View Report</button></div>`).join('');}
+  showScreen('s-hall');
+}
+
+function showReport(name){
+  const prog=getProgress()[name]||[];const stars=getStars()[name]||{};
+  const totalStars=Object.values(stars).reduce((a,b)=>a+b,0);
+  document.getElementById('report-content').innerHTML=`
+    <div class="cert" style="border:2px solid #e0e7ff">
+      <h2 style="margin-bottom:4px">Progress Report</h2>
+      <p style="font-size:1.1rem;font-weight:700;color:#4f46e5;margin-bottom:16px">${name}</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+        <div style="background:#f0fdf4;border-radius:12px;padding:12px;text-align:center"><div style="font-size:1.8rem;font-weight:800;color:#16a34a">${prog.length}</div><div style="font-size:.8rem;color:#555">Challenges completed</div></div>
+        <div style="background:#fffbeb;border-radius:12px;padding:12px;text-align:center"><div style="font-size:1.8rem;font-weight:800;color:#d97706">${totalStars}</div><div style="font-size:.8rem;color:#555">Total stars earned</div></div>
+      </div>
+      <table style="width:100%;font-size:.9rem;border-collapse:collapse">
+        ${CHALLENGES.map((ch,i)=>{const done=prog.includes(i);const s=stars[i]||0;return`<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:7px 4px;font-weight:600;color:${done?ch.wordBg:'#aaa'}">${ch.name}</td><td style="padding:7px 4px;text-align:center">${done?'✓':'–'}</td><td style="padding:7px 4px;text-align:right;font-size:1rem">${done?'⭐'.repeat(s)+'☆'.repeat(3-s):'☆☆☆'}</td></tr>`;}).join('')}
+      </table>
+      <div class="cert-date">Report generated ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</div>
+    </div>`;
+  document.getElementById('reset-btn').textContent='🗑️ Reset '+name+"'s progress";
+  document.getElementById('reset-btn').onclick=()=>{if(confirm('Reset all progress for '+name+'? This cannot be undone.')){const p=getProgress();delete p[name];saveProgress(p);const st=getStars();delete st[name];saveStars(st);const h=getHall().filter(x=>x.name!==name);saveHall(h);showHall();}};
+  showScreen('s-report');
+}
+
+// ---- SECRET TAP ----
+let tapCount=0,tapTimer=null;
+function secretTap(){
+  tapCount++;
+  clearTimeout(tapTimer);
+  tapTimer=setTimeout(()=>tapCount=0,2000);
+  if(tapCount>=5){tapCount=0;openAdmin();}
+}
+
+// ---- ADMIN STATS ----
+async function openAdmin(){
+  showScreen('s-admin');
+  document.getElementById('admin-content').innerHTML='<p style="color:#555;text-align:center;margin-top:20px">Loading stats...</p>';
+  try{
+    // Record this session
+    const today=new Date().toISOString().slice(0,10);
+    // Total sessions
+    let sessions=0;
+    try{const r=await window.storage.get('stats:sessions');sessions=r?parseInt(r.value)||0:0;}catch{}
+    sessions++;
+    await window.storage.set('stats:sessions',String(sessions),true);
+    // Daily sessions
+    let daily={};
+    try{const r=await window.storage.get('stats:daily');daily=r?JSON.parse(r.value):{}}catch{}
+    daily[today]=(daily[today]||0)+1;
+    // Keep last 14 days only
+    const keys=Object.keys(daily).sort();
+    if(keys.length>14)keys.slice(0,keys.length-14).forEach(k=>delete daily[k]);
+    await window.storage.set('stats:daily',JSON.stringify(daily),true);
+    // Unique players from hall + progress
+    const hall=getHall();
+    const prog=getProgress();
+    const allNames=new Set([...hall.map(h=>h.name),...Object.keys(prog)]);
+    const uniquePlayers=allNames.size;
+    await window.storage.set('stats:unique',String(uniquePlayers),true);
+    // Most active (most challenges completed)
+    const topPlayers=hall.sort((a,b)=>b.levels.length-a.levels.length).slice(0,5);
+    // Build dashboard
+    const sortedDays=Object.keys(daily).sort();
+    const maxVal=Math.max(...Object.values(daily),1);
+    const barChart=sortedDays.slice(-7).map(d=>{
+      const pct=Math.round((daily[d]/maxVal)*100);
+      const label=new Date(d).toLocaleDateString('en-GB',{weekday:'short',day:'numeric'});
+      return`<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+        <div style="font-size:.75rem;font-weight:700;color:#4f46e5">${daily[d]}</div>
+        <div style="width:100%;background:#4f46e5;border-radius:6px 6px 0 0;height:${Math.max(pct*1.2,4)}px;min-height:4px"></div>
+        <div style="font-size:.65rem;color:#888;text-align:center;writing-mode:vertical-lr;transform:rotate(180deg);height:36px">${label}</div>
+      </div>`;
+    }).join('');
+    document.getElementById('admin-content').innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div style="background:#eef2ff;border-radius:14px;padding:16px;text-align:center;border:1.5px solid #c7d2fe">
+          <div style="font-size:2.2rem;font-weight:800;color:#4f46e5">${sessions.toLocaleString()}</div>
+          <div style="font-size:.8rem;color:#555;margin-top:4px">Total sessions</div>
+        </div>
+        <div style="background:#f0fdf4;border-radius:14px;padding:16px;text-align:center;border:1.5px solid #bbf7d0">
+          <div style="font-size:2.2rem;font-weight:800;color:#16a34a">${uniquePlayers}</div>
+          <div style="font-size:.8rem;color:#555;margin-top:4px">Unique players</div>
+        </div>
+        <div style="background:#fffbeb;border-radius:14px;padding:16px;text-align:center;border:1.5px solid #fde68a">
+          <div style="font-size:2.2rem;font-weight:800;color:#d97706">${daily[today]||1}</div>
+          <div style="font-size:.8rem;color:#555;margin-top:4px">Sessions today</div>
+        </div>
+        <div style="background:#fdf4ff;border-radius:14px;padding:16px;text-align:center;border:1.5px solid #e9d5ff">
+          <div style="font-size:2.2rem;font-weight:800;color:#9333ea">${sortedDays.length}</div>
+          <div style="font-size:.8rem;color:#555;margin-top:4px">Active days</div>
+        </div>
+      </div>
+      <div class="card-wrap" style="margin-bottom:16px">
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:12px;color:#1a1a2e">📅 Sessions — last 7 days</div>
+        <div style="display:flex;align-items:flex-end;gap:6px;height:130px;padding-bottom:0">${barChart}</div>
+      </div>
+      ${topPlayers.length?`<div class="card-wrap">
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:12px;color:#1a1a2e">🏅 Most active players</div>
+        ${topPlayers.map((h,i)=>{const ch=CHALLENGES[Math.max(...h.levels)];return`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:1.1rem">${'🥇🥈🥉🏅🏅'[i]}</span><span style="font-weight:600">${h.name}</span></div><span style="background:${ch.wordBg};color:${ch.wordText};padding:3px 10px;border-radius:99px;font-size:.8rem;font-weight:700">${h.levels.length} levels</span></div>`;}).join('')}
+      </div>`:''}
+      <p style="font-size:.75rem;color:#aaa;text-align:center;margin-top:12px">Stats shared across all devices playing this game</p>`;
+  } catch(e){
+    document.getElementById('admin-content').innerHTML='<p style="color:#dc2626;text-align:center">Could not load stats. Try again later.</p>';
+  }
+}
+
+initWelcome();
+</script>
+</body>
+</html>
