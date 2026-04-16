@@ -6,7 +6,7 @@
 <title>Tricky Word Champion</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:linear-gradient(135deg,#e0e7ff 0%,#f0fdf4 50%,#fef9c3 100%);min-height:100vh;color:#1a1a2e}
+body{font-family:system-ui,sans-serif;background:linear-gradient(135deg,#e0e7ff 0%,#f0fdf4 50%,#fef9c3 100%);min-height:100vh;color:#1a1a2e;font-size:18px}
 .screen{display:none;flex-direction:column;align-items:center;min-height:100vh;padding:20px}
 .screen.active{display:flex}
 h1{font-size:2.2rem;font-weight:800;text-align:center;margin-bottom:8px;color:#1a1a2e}
@@ -48,10 +48,10 @@ h2{font-size:1.5rem;font-weight:700;text-align:center;margin-bottom:16px;color:#
 .timer-bar{height:100%;border-radius:99px;transition:width .5s linear,background .3s}
 .timer-display{font-size:2.8rem;font-weight:800;color:#1a1a2e}
 .word-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;width:100%;margin:0 0 16px}
-.word-chip{padding:12px 20px;border-radius:14px;font-size:1.2rem;font-weight:700;cursor:pointer;border:2px solid transparent;transition:background .15s,border-color .15s,transform .1s;user-select:none}
+.word-chip{padding:14px 22px;border-radius:14px;font-size:1.3rem;font-weight:700;cursor:pointer;border:3px solid transparent;transition:background .15s,border-color .15s,transform .1s;user-select:none}
 .word-chip:active{transform:scale(.93)}
-.word-chip.ticked{background:rgba(22,163,74,.18);border-color:#16a34a;color:#14532d}
-.word-chip.unticked{background:rgba(220,38,38,.15);border-color:#dc2626;color:#7f1d1d}
+.word-chip.ticked{background:#bbf7d0 !important;border-color:#16a34a !important;color:#14532d !important}
+.word-chip.unticked{background:rgba(220,38,38,.15)!important;border-color:#dc2626!important;color:#7f1d1d!important}
 /* Rapid fire */
 .rf-word{font-size:5rem;font-weight:800;text-align:center;border-radius:28px;padding:40px;width:100%;max-width:400px;box-shadow:0 6px 24px rgba(0,0,0,.15);transition:opacity .2s}
 .rf-bar-wrap{width:100%;max-width:400px;height:12px;background:#e0e7ff;border-radius:99px;overflow:hidden;margin:12px 0}
@@ -392,7 +392,7 @@ function startChallenge(){
   [...ch.words].sort(()=>Math.random()-.5).forEach(w=>{
     const chip=document.createElement('div');chip.className='word-chip';chip.textContent=w;chip.dataset.word=w;
     chip.style.background=ch.chipBg;chip.style.borderColor=ch.chipBorder;chip.style.color=ch.chipColor;
-    chip.onclick=()=>{if(ticked.has(w)){ticked.delete(w);chip.classList.remove('ticked');chip.style.background=ch.chipBg;chip.style.borderColor=ch.chipBorder;chip.style.color=ch.chipColor;}else{ticked.add(w);chip.classList.add('ticked');chip.style.background='';chip.style.borderColor='';chip.style.color='';}updateTally();};
+    chip.onclick=()=>{if(ticked.has(w)){ticked.delete(w);chip.classList.remove('ticked');chip.style.background=ch.chipBg;chip.style.borderColor=ch.chipBorder;chip.style.color=ch.chipColor;}else{ticked.add(w);chip.classList.add('ticked');chip.style.removeProperty('background');chip.style.removeProperty('border-color');chip.style.removeProperty('color');}updateTally();};
     grid.appendChild(chip);
   });
   document.getElementById('ch-bar').style.width='100%';document.getElementById('ch-bar').style.background='#16a34a';
